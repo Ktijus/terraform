@@ -1,1 +1,75 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "4.26.0"
+    }
+  }
+}
+
+provider "aws" {
+  # Configuration options
+  region = "us-east-1"
+  profile = "sujit-tf"
+  
+  
+ ---- #creating security group in a particular vpc and adding rules to the sg
+resource "aws_vpc" "my_vpc" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_security_group" "my_security_group" {
+  vpc_id = aws_vpc.my_vpc.id
+  name   = "example security group"
+}
+resource "aws_security_group_rule" "this" {
+  protocol          = "tcp"
+  security_group_id = aws_security_group.my_security_group.id
+  from_port         = 443
+  to_port           = 443
+  type              = "ingress"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+resource "aws_security_group_rule" "http_in" {
+ protocol = "tcp"
+ security_group_id = aws_security_group.my_security_group.id
+ from_port = 80
+ to_port = 80
+ type = "ingress"
+ cidr_blocks = ["0.0.0.0/0"]
+ }
+
+
+
+#creating s3 bucket
+resource "aws_s3_bucket" "first_bucket" {
+bucket = "sujit1-first-bucket"
+}
+
+----#creating IAM user
+resource "aws_iam_user" "demouser" {
+    name = "ksujit"
+}
+
+----#creating 10 IAM users using count
+resource "aws_iam_user" "demo" {
+  count = 10
+  name = "ranjit.${count.index}"
+}
+
+---#creating unique multiple users
+variable "username" {
+  type = list(string)
+  default = ["ab","bc","cd","de","ef","fg","gh","hi","ij","jk","kl","lm","mn","no","op","pq","qr","rs","st","tu","uv"]
+}
+
+resource "aws_iam_user" "demo" {
+  count = "${length(var.username)}"
+  name = "${element(var.username,count.index )}"
+}
+output "user_arn" {
+  value = aws_iam_user.demo.*.arn
+}
+
+
 
